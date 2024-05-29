@@ -1,5 +1,4 @@
 import pandas as pd
-print(pd.__file__)
 import torch
 from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForSeq2Seq, TrainingArguments, Trainer
@@ -15,7 +14,7 @@ model_id = 'LLM-Research/Meta-Llama-3-8B-Instruct'
 
 # 检查CUDA是否可用，然后检查MPS是否可用，最后回退到CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-print(device)
+
 models_dir = './models'
 dataset_file = './dataset/huanhuan.json'
 # modelscope/hub/snapshot_download.py:75 会把模型改名 name = name.replace('.', '___')
@@ -38,8 +37,10 @@ lora_config = LoraConfig(
 def train():
     # 加载模型
     model_dir = snapshot_download(model_id=model_id, cache_dir=f"{models_dir}/model", revision='master')
+    if model_path != model_dir:
+        raise Exception(f"model_path:{model_path} != model_dir:{model_dir}")
 
-    model = AutoModelForCausalLM.from_pretrained(model_path,  torch_dtype=torch_dtype).to(device)
+    model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto", torch_dtype=torch_dtype)
     model.enable_input_require_grads()  # 开启梯度检查点时，要执行该方法
 
     # 加载数据
@@ -110,10 +111,10 @@ def infer(prompt="你是谁？"):
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, trust_remote_code=True)
 
     # 加载模型
-    model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch_dtype).to(device)
+    model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto", torch_dtype=torch_dtype)
 
     # 加载lora权重
-    model = PeftModel.from_pretrained(model, model_id=lora_dir, config=lora_config).to(device)
+    model = PeftModel.from_pretrained(model, model_id=lora_dir, config=lora_config)
 
     messages = [
         {"role": "user", "content": prompt}
