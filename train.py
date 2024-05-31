@@ -22,7 +22,7 @@ model_path = f"{models_dir}/model/{model_id.replace('.', '___')}"
 checkpoint_dir = f"./models/checkpoint/{model_id}"
 lora_dir = f"./models/lora/{model_id}"
 
-torch_dtype = torch.half
+torch_dtype = torch.bfloat16
 
 lora_config = LoraConfig(
     task_type=TaskType.CAUSAL_LM,
